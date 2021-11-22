@@ -9,98 +9,126 @@ import (
 const maxLevel int = 20
 
 type (
-
 	Element struct {
-		right *Element
-		down *Element
+		next  []*Element
+		prev  *Element
 		key   []byte
 		value []byte
+		level int
 	}
 
 	SkipList struct {
-		head *Element
-		maxLevel int
-		rand     *rand.Rand
+		headLevels []*Element
+		tailLevels []*Element
+		maxLevel   int
+		size       int
+		rand       *rand.Rand
 	}
 )
 
-func (e *Element) equals(element Element) bool {
-	return bytes.Compare(e.key, element.key) == 0
-}
-
-func (e *Element) byteEquals(key []byte) bool {
-	return bytes.Compare(e.key, key) == 0
-}
-
-func (e *Element) byteGreaterThan(key []byte) bool {
-	return bytes.Compare(e.key, key) > 0
-}
-
 func New() *SkipList {
 	return &SkipList{
-		maxLevel:  maxLevel,
-		rand:      rand.New(rand.NewSource(time.Now().UnixNano())),
+		headLevels: make([]*Element, maxLevel),
+		tailLevels: make([]*Element, maxLevel),
+		maxLevel:   maxLevel,
+		rand:       rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
 }
 
 func (s *SkipList) Search(key []byte) *Element {
-	element := s.head
-	for ; element != nil; {
-		if element.byteEquals(key) {
-			return element
-		} else if element.right == nil || element.right.byteGreaterThan(key) {
-			element = element.down
+	currentIndex := s.findEntryPointIndex(key, 0)
+	current := s.headLevels[currentIndex]
+	if current != nil && current.equals(key) {
+		return current
+	}
+
+	for {
+		next := current.next[currentIndex]
+
+		if next != nil && next.lessThan(key) {
+			current = next
 		} else {
-			element = element.right
+			if currentIndex > 0 {
+				if current.next[0] != nil && current.next[0].equals(key) {
+					return current.next[0]
+				}
+				currentIndex--
+			} else {
+				return next
+			}
 		}
 	}
-	return nil
 }
 
 func (s *SkipList) Insert(key, value []byte) {
 	element := s.Search(key)
-	if element != nil{
+	if element != nil {
 		element.value = value
 		return
 	}
-	if s.head == nil {
-		s.head = &Element{
-			key:   key,
-			value: value,
-		}
-		return
-	}
-	var stack []*Element
-	current := s.head
-	for ; current!= nil; {
-		if current.right == nil || current.right.byteGreaterThan(key) {
-			stack = append(stack, current)
-			current = current.down
-		} else {
-			stack = nil
-			stack = append(stack, current)
-			current = current.right
-		}
-	}
-	current = stack[len(stack)-1]
 	level := s.randomLevel()
-	var downElement *Element
-	for i := 0; i < len(stack); i++  {
-		if i >= level {
-			break
-		}
-		rightElement := stack[len(stack) - 1 -i].right
-		currentElement := &Element{
-			right: rightElement,
-			down:  downElement,
-			key:   key,
-			value: value,
-		}
-		s.head.right = currentElement
-		downElement = currentElement
+
+	newElement := &Element{
+		next:  make([]*Element, s.maxLevel),
+		key:   key,
+		value: value,
+		level: level,
 	}
-	s.head = s.head.right
-	return
+	index := s.findEntryPointIndex(key, level)
+	var current *Element
+	var next *Element
+	for {
+		if current == nil {
+			next = s.headLevels[index]
+		} else {
+			next = current.next[index]
+		}
+
+		if index <= level && (next == nil || next.greaterThan(key)) {
+			newElement.next[index] = next
+			if current != nil {
+				current.next[index] = newElement
+			}
+
+			if index == 0 {
+				newElement.prev = current
+				if next != nil {
+					next.prev = newElement
+				}
+			}
+		}
+
+		if next != nil && next.lessThan(key) {
+			current = next
+		} else {
+			index--
+			if index < 0 {
+				break
+			}
+		}
+	}
+
+}
+
+func (s SkipList) findEntryPointIndex(key []byte, level int) int {
+	for i := s.maxLevel - 1; i >= 0; i-- {
+		if s.headLevels[i] != nil && !s.headLevels[i].greaterThan(key) || i < level {
+			return i
+		}
+	}
+	return 0
+}
+
+func (e *Element) equals(key []byte) bool {
+	return bytes.Compare(e.key, key) == 0
+}
+
+func (e *Element) greaterThan(key []byte) bool {
+	return bytes.Compare(e.key, key) > 0
+}
+
+func (e *Element) lessThan(key []byte) bool {
+	return bytes.Compare(e.key, key) < 0
 }
 
 func (s *SkipList) randomLevel() int {
