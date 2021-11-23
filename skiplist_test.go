@@ -1,20 +1,24 @@
-package skiplist
+package mylist
 
 import (
-	"bytes"
+	"fmt"
 	"testing"
+	"time"
 )
 
-func TestSkipList_Search(t *testing.T) {
-	s := New()
-	s.Insert([]byte("john"), []byte("doe"))
-	s.Insert([]byte("jack"), []byte("john"))
-	s.Insert([]byte("rocky"), []byte("mathew"))
-	s.Insert([]byte("walley"), []byte("richard"))
-	s.Insert([]byte("wolfram"), []byte("matthew"))
+func TestList(t *testing.T) {
 
-	val := s.Search([]byte("wolfram"))
-	if bytes.Compare(val.value, []byte("matthew")) != 0 {
-		t.Errorf("failed")
-	}
+	mylist := New(20000000)
+	now := time.Now()
+	mylist.Search(100000)
+	fmt.Println(time.Since(now))
+
+}
+
+func TestSkipList(t *testing.T) {
+	s := NewSkipList(20000000)
+	now := time.Now()
+	s.Find(Element(100000))
+	fmt.Println(time.Since(now))
+
 }
