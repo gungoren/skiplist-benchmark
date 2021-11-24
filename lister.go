@@ -1,11 +1,11 @@
-package mylist
+package lister
 
 import (
 	"fmt"
 	"github.com/MauriceGit/skiplist"
 )
 
-type mylist struct {
+type lister struct {
 	data []int
 }
 
@@ -14,18 +14,17 @@ type Element int
 func (e Element) ExtractKey() float64 {
 	return float64(e)
 }
+
 func (e Element) String() string {
 	return fmt.Sprintf("%03d", e)
 }
 
-func New(size int) *mylist {
+func New(size int) *lister {
 	var d []int
-
 	for i := 0; i < size; i++ {
 		d = append(d, i)
 	}
-
-	return &mylist{data: d}
+	return &lister{data: d}
 }
 
 func NewSkipList(size int) skiplist.SkipList {
@@ -36,8 +35,8 @@ func NewSkipList(size int) skiplist.SkipList {
 	return s
 }
 
-func (m mylist) Search(k int) int {
-	for i := range m.data {
+func (l lister) Search(k int) int {
+	for i := range l.data {
 		if i == k {
 			return k
 		}
