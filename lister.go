@@ -43,3 +43,24 @@ func (l lister) Search(k int) int {
 	}
 	return -1
 }
+
+func (l lister) BinarySearch(k int) int {
+	low := 0
+	high := len(l.data) - 1
+
+	for low <= high {
+		median := (low + high) / 2
+
+		if l.data[median] < k {
+			low = median + 1
+		} else {
+			high = median - 1
+		}
+	}
+
+	if low == len(l.data) || l.data[low] != k {
+		return -1
+	}
+
+	return k
+}
