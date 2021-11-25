@@ -14,6 +14,12 @@ func BenchmarkList(b *testing.B) {
 	}
 }
 
+func BenchmarkBinaryList(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		my_list.BinarySearch(r())
+	}
+}
+
 func BenchmarkSkipList(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		skip_list.Find(Element(r()))
